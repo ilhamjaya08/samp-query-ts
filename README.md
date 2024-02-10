@@ -4,7 +4,9 @@ The NPM library that I self-rewrote from Javascript to TypeScript, I want to mak
 I re-wrote the Original Script into another language to increase my skills in TypeScript Language, do not intend to misuse or change the name of the Original Script creator, and I also intend to make it easier for other people who want to create applications that utilize the NPM Package for needs in the Community of SA:MP be it Web-App, Bot-App, or others.
 # NPM Package Page
 To install this Package to your project, use this 
-<code>npm i samp-query-ts</code>
+<br><br>
+```npm i samp-query-ts```
+<br><br>
 You can see the preview of this package at Official NPM Site https://www.npmjs.com/package/samp-query-ts or click <a href="https://www.npmjs.com/package/samp-query-ts">here</a>
 # Original Script
 The original script is <a href="https://github.com/Revalto/node-samp-query">Here</a>
