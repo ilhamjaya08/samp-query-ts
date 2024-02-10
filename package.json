@@ -1,0 +1,28 @@
+{
+    "name": "samp-query-ts",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.ts",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/ilhamjaya08/samp-query-ts.git"
+    },
+    "keywords": [
+      "nodejs",
+      "samp",
+      "query",
+      "samp-query",
+      "promise",
+      "async",
+      "await"
+    ],
+    "author": "ilhamjaya08",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/ilhamjaya08/samp-query-ts/issues"
+    },
+    "homepage": "https://github.com/ilhamjaya08/samp-query-ts#readme"
+  }
