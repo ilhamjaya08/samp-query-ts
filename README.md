@@ -1,7 +1,11 @@
 # samp-query-ts
 The NPM library that I self-rewrote from Javascript to TypeScript, I want to make the node-samp-query library function stably in Typescript. If there are any bugs/errors/other problems, please report them to me on the Issues tab on this Repository page. Later, I will immediately make a solution/latest version that is good and has no problems, because the original script from this Package Library belongs to someone else that I write again using another programming language
+
+> Note from @hansputera : This package has major changes, I've rewritten the entire code to clean up the code, and it can be debugged more easily
+
 # Disclaimer Statement
 I re-wrote the Original Script into another language to increase my skills in TypeScript Language, do not intend to misuse or change the name of the Original Script creator, and I also intend to make it easier for other people who want to create applications that utilize the NPM Package for needs in the Community of SA:MP be it Web-App, Bot-App, or others.
+
 # NPM Package Page
 To install this Package to your project, use this 
 <br><br>
