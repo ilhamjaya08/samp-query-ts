@@ -1,19 +1,21 @@
 {
     "compilerOptions": {
         "allowJs": true,
-        "allowSyntheticDefaultImports": true,
         "target": "ESNext",
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "outDir": "./dist",
+        "declaration": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "strictBindCallApply": true,
         "strictFunctionTypes": true,
-        "strictNullChecks": true
+        "strictPropertyInitialization": true,
+        "removeComments": true,
+        "module": "CommonJS",
+        "types": [
+            "@types/node"
+        ],
+        "outDir": "dist",
+        "skipLibCheck": true
     },
-    "exclude": [
-        "node_modules",
-        "dist"
-    ],
-    "include": [
-        "src"
-    ]
+    "exclude": ["node_modules", "dist", "tests"],
+    "include": ["src/**/*.ts"]
 }
