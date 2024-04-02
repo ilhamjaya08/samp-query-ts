@@ -1,2 +1,5 @@
 # Ignoring node_modules
 node_modules/
+
+# Ignoring build
+dist/

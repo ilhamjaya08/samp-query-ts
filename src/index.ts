@@ -1,228 +1,248 @@
-import * as dgram from 'dgram';
-
-interface SampQueryOptions {
-    ip?: string;
-    port?: number;
-}
-
-interface ServerInfo {
-    serverName: string;
-    gameModeName: string;
-    players: number;
-    maxPlayers: number;
-    language: string;
-    closed: boolean;
-}
-
-interface ServerProperty {
-    [key: string]: string;
-}
-
-interface PlayerInfo {
-    id: number;
-    name: string;
-    score: number;
-    ping: number;
-}
+import * as dgram from "dgram";
+import { PlayerInfo, SampQueryOptions, ServerInfo, ServerProperty } from "./types";
 
 class SampQuery {
-    private ip: string;
-    private port: number;
-    private timeout: number;
+  private ip!: string;
+  private port!: number;
+  private serverInfo!: ServerInfo;
+  private serverProperties!: ServerProperty;
+  private maxServerHitDiffTime!: number;
 
-    constructor(options: SampQueryOptions) {
-        this.ip = options.ip || '127.0.0.1';
-        this.port = options.port || 7777;
-        this.timeout = 1000;
+  #serverInfoHitTime!: number;
+  #latency: number = 0;
+
+  constructor(options: SampQueryOptions) {
+    this.ip = options.ip || "127.0.0.1";
+    this.port = options.port || 7777;
+    this.maxServerHitDiffTime = options.maxServerHitDiffTime || 10_000; // 10 seconds
+  }
+
+  async getServerInfo(): Promise<[ServerInfo, ServerProperty, PlayerInfo[]]> {
+    return Promise.all([
+      this.request<ServerInfo>("i"),
+      this.request<ServerProperty>("r"),
+      this.getServerPlayers(),
+    ]);
+  }
+
+  async #readServerInfo(): Promise<ServerInfo> {
+    if ((Date.now()-this.#serverInfoHitTime >= this.maxServerHitDiffTime) || !this.serverInfo) {
+        const serverInfo = await this.getServerInfo();
+        this.#serverInfoHitTime = Date.now();
+        this.serverInfo = serverInfo[0];
+        this.serverProperties = serverInfo[1];
     }
 
-    async getServerInfo(): Promise<[ServerInfo, ServerProperty[], PlayerInfo[]]> {
-        return await Promise.all([
-            this.request<ServerInfo>('i'),
-            this.request<ServerProperty[]>('r'),
-            this.getServerPlayers()
-        ]);
+    return this.serverInfo;
+  }
+
+  async #readServerProperty(): Promise<ServerProperty> {
+    await this.#readServerInfo();
+    return this.serverProperties;
+  }
+
+  async getServerProperties(): Promise<ServerProperty> {
+    return this.#readServerProperty();
+  }
+
+  async getServerOnline(): Promise<number> {
+    const server = await this.#readServerInfo();
+    return server.players;
+  }
+
+  async getServerMaxPlayers(): Promise<number> {
+    const server = await this.#readServerInfo();
+    return server.maxPlayers;
+  }
+
+  async getServerName(): Promise<string> {
+    const server = await this.#readServerInfo();
+    return server.serverName;
+  }
+
+  async getServerGamemodeName(): Promise<string> {
+    const server = await this.#readServerInfo();
+    return server.gameModeName;
+  }
+
+  async getServerLanguage(): Promise<string> {
+    const server = await this.#readServerInfo();
+    return server.language;
+  }
+
+  async getServerVersion(): Promise<string> {
+    const serverProperty = await this.#readServerProperty();
+    return serverProperty.version;
+  }
+
+  async getServerWeather(): Promise<string> {
+    const serverProperty = await this.#readServerProperty();
+    return serverProperty.weather;
+  }
+
+  async getServerWebSite(): Promise<string> {
+    const serverProperty = await this.#readServerProperty();
+    return serverProperty.weburl;
+  }
+
+  async getServerWorldTime(): Promise<string> {
+    const serverProperty = await this.#readServerProperty();
+    return serverProperty.worldtime;
+  }
+
+  async getServerPlayers(): Promise<PlayerInfo[]> {
+    const maxPlayers = await this.getServerOnline();
+
+    if (maxPlayers > 100) {
+      throw new Error(`More than 100 players on the server`);
     }
 
-    async getServerProperties(): Promise<ServerProperty[]> {
-        return await this.request<ServerProperty[]>('r');
+    return await this.request<PlayerInfo[]>("c");
+  }
+
+  async getServerPlayersDetailed(): Promise<PlayerInfo[]> {
+    const maxPlayers = await this.getServerOnline();
+
+    if (maxPlayers > 100) {
+      throw new Error(`More than 100 players on the server`);
     }
 
-    async getServerOnline(): Promise<number> {
-        return (await this.request<ServerInfo>('i')).players;
-    }
+    return await this.request<PlayerInfo[]>("d");
+  }
 
-    async getServerMaxPlayers(): Promise<number> {
-        return (await this.request<ServerInfo>('i')).maxPlayers;
-    }
+  async getServerPing(): Promise<number> {
+    const startTime = new Date().getTime();
+    await this.request<ServerInfo>("i");
 
-    async getServerName(): Promise<string> {
-        return (await this.request<ServerInfo>('i')).serverName;
-    }
+    return new Date().getTime() - startTime;
+  }
 
-    async getServerGamemodeName(): Promise<string> {
-        return (await this.request<ServerInfo>('i')).gameModeName;
-    }
+  private request<T>(opcode: string): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const socket = dgram.createSocket("udp4");
+      const startTime = Date.now();
+      const packet = Buffer.alloc(10 + opcode.length);
 
-    async getServerLanguage(): Promise<string> {
-        return (await this.request<ServerInfo>('i')).language;
-    }
+      packet.write("SAMP");
+      packet[4] = parseInt(this.ip.split(".")[0], 10);
+      packet[5] = parseInt(this.ip.split(".")[1], 10);
+      packet[6] = parseInt(this.ip.split(".")[2], 10);
+      packet[7] = parseInt(this.ip.split(".")[3], 10);
+      packet[8] = this.port & 0xff;
+      packet[9] = (this.port >> 8) & 0xff;
+      packet[10] = opcode.charCodeAt(0);
 
-    async getServerVersion(): Promise<string> {
-        return (await this.request<ServerProperty>('r')).version;
-    }
+      try {
+        socket.send(packet, 0, packet.length, this.port, this.ip);
+      } catch (e) {
+        console.log(e);
+        reject(e);
+      }
 
-    async getServerWeather(): Promise<string> {
-        return (await this.request<ServerProperty>('r')).weather;
-    }
+      const controller = setTimeout(() => {
+        socket.close();
+        reject(`[error] host unavailable - ${this.ip}:${this.port}`);
+      }, 2000);
 
-    async getServerWebSite(): Promise<string> {
-        return (await this.request<ServerProperty>('r')).weburl;
-    }
+      socket.on("message", (message) => {
+        if (controller) clearTimeout(controller);
 
-    async getServerWorldTime(): Promise<string> {
-        return (await this.request<ServerProperty>('r')).worldtime;
-    }
+        if (message.length < 11) {
+          reject(`[error] invalid socket on message - ${message}`);
+        } else {
+          socket.close();
+          message = message.subarray(11);
 
-    async getServerPlayers(): Promise<PlayerInfo[]> {
-        const maxPlayers = await this.getServerOnline();
+          let offset = 0;
 
-        if (maxPlayers > 100) {
-            throw new Error(`More than 100 players on the server`);
-        }
+          if (opcode === "i") {
+            const closed = !!message.readUInt8(offset);
+            const players = message.readUInt16LE((offset += 1));
+            const maxPlayers = message.readUInt16LE((offset += 2));
 
-        return await this.request<PlayerInfo[]>('c');
-    }
+            const serverName = message
+              .subarray((offset += 4), (offset += message.readUInt16LE((offset += 2))))
+              .toString();
 
-    async getServerPlayersDetailed(): Promise<PlayerInfo[]> {
-        const maxPlayers = await this.getServerOnline();
+            const gameModeName = message
+              .subarray((offset += 4), (offset += message.readUInt16LE(offset)))
+              .toString();
 
-        if (maxPlayers > 100) {
-            throw new Error(`More than 100 players on the server`);
-        }
+            const language = message
+              .subarray((offset += 4), (offset += message.readUInt16LE(offset)))
+              .toString();
 
-        return await this.request<PlayerInfo[]>('d');
-    }
+            resolve({
+              serverName,
+              gameModeName,
+              players,
+              maxPlayers,
+              language,
+              closed,
+            } as T);
+          } else if (opcode === "r") {
+            offset += 2;
 
-    async getServerPing(): Promise<number> {
-        const startTime = new Date().getTime();
-        await this.request<ServerInfo>('i');
-        return new Date().getTime() - startTime;
-    }
+            const object = [
+              ...new Array(message.readUInt16LE(offset - 2)).fill({}),
+            ].map(() => {
+              const property = message
+                .subarray(++offset, (offset += message.readUInt8(offset)))
+                .toString();
 
-    private request<T>(opcode: string): Promise<T> {
-        return new Promise<T>((resolve, reject) => {
-            const socket = dgram.createSocket("udp4");
-            let packet = Buffer.alloc(10 + opcode.length);
+              const propertyvalue = message
+                .subarray(++offset, (offset += message.readUInt8(offset)))
+                .toString();
 
-            packet.write('SAMP');
-            packet[4] = parseInt(this.ip.split('.')[0], 10);
-            packet[5] = parseInt(this.ip.split('.')[1], 10);
-            packet[6] = parseInt(this.ip.split('.')[2], 10);
-            packet[7] = parseInt(this.ip.split('.')[3], 10);
-            packet[8] = this.port & 0xFF;
-            packet[9] = this.port >> 8 & 0xFF;
-            packet[10] = opcode.charCodeAt(0);
-
-            try {
-                socket.send(packet, 0, packet.length, this.port, this.ip);
-            } catch (e) {
-                console.log(e);
-                reject(e);
-            }
-
-            let controller = setTimeout(() => {
-                socket.close();
-                reject(`[error] host unavailable - ${this.ip}:${this.port}`);
-            }, 2000);
-
-            socket.on('message', (message) => {
-                if (controller) clearTimeout(controller);
-
-                if (message.length < 11) {
-                    reject(`[error] invalid socket on message - ${message}`);
-                } else {
-                    socket.close();
-                    message = message.slice(11);
-
-                    let offset = 0;
-
-                    if (opcode === 'i') {
-                        const closed = !!message.readUInt8(offset);
-                        const players = message.readUInt16LE(offset += 1);
-                        const maxPlayers = message.readUInt16LE(offset += 2);
-
-                        let serverName = message.readUInt16LE(offset += 2);
-                        serverName = message.slice(offset += 4, offset += serverName).toString();
-
-                        let gameModeName = message.readUInt16LE(offset);
-                        gameModeName = message.slice(offset += 4, offset += gameModeName).toString();
-
-                        let language = message.readUInt16LE(offset);
-                        language = message.slice(offset += 4, offset += language).toString();
-
-                        resolve({ serverName, gameModeName, players, maxPlayers, language, closed });
-                    } else if (opcode === 'r') {
-                        offset += 2;
-
-                        const object = [
-                            ...new Array(message.readUInt16LE(offset - 2))
-                                .fill({})
-                        ].map(() => {
-                            let property = message.readUInt8(offset);
-                            property = message.slice(++offset, offset += property).toString();
-
-                            let propertyvalue = message.readUInt8(offset);
-                            propertyvalue = message.slice(++offset, offset += propertyvalue).toString();
-
-                            return { [property]: propertyvalue };
-                        });
-
-                        resolve(object);
-                    } else if (opcode === 'd') {
-                        offset += 2;
-
-                        const object = [
-                            ...new Array(Math.floor(message.readUInt16LE(offset - 2)))
-                                .fill({})
-                        ].map(() => {
-                            const id = message.readUInt8(offset);
-
-                            let name = message.readUInt8(++offset);
-                            name = message.slice(++offset, offset += name).toString();
-
-                            const score = message.readUInt16LE(offset);
-                            const ping = message.readUInt16LE(offset += 4);
-
-                            offset += 4;
-
-                            return { id, name, score, ping };
-                        });
-
-                        resolve(object);
-                    } else if (opcode === 'c') {
-                        offset += 2;
-
-                        const object = [
-                            ...new Array(Math.floor(message.readUInt16LE(offset - 2)))
-                                .fill({})
-                        ].map(() => {
-                            let name = message.readUInt8(offset);
-                            name = message.slice(++offset, offset += name).toString();
-
-                            const score = message.readUInt16LE(offset);
-
-                            offset += 4;
-
-                            return { name, score };
-                        });
-
-                        resolve(object);
-                    }
-                }
+              return { [property]: propertyvalue };
             });
-        });
-    }
+
+            resolve(object as T);
+          } else if (opcode === "d") {
+            offset += 2;
+
+            const object = [
+              ...new Array(Math.floor(message.readUInt16LE(offset - 2))).fill(
+                {},
+              ),
+            ].map(() => {
+              const id = message.readUInt8(offset);
+
+              const name = message.subarray(++offset, (offset += message.readUInt8(++offset))).toString();
+
+              const score = message.readUInt16LE(offset);
+              const ping = message.readUInt16LE((offset += 4));
+
+              offset += 4;
+
+              return { id, name, score, ping };
+            });
+
+            resolve(object as T);
+          } else if (opcode === "c") {
+            offset += 2;
+
+            const object = [
+              ...new Array(Math.floor(message.readUInt16LE(offset - 2))).fill(
+                {},
+              ),
+            ].map(() => {
+              const name = message.subarray(++offset, (offset += message.readUInt8(offset))).toString();
+              const score = message.readUInt16LE(offset);
+
+              offset += 4;
+
+              return { name, score };
+            });
+
+            resolve(object as T);
+          }
+        }
+      });
+    });
+  }
 }
 
-export = SampQuery;
+export { SampQuery };
+
+export default SampQuery;
