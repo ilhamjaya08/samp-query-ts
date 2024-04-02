@@ -1,3 +1,6 @@
+# warning
+Warning, The latest version of this library was outdated and deprecated, i will soon released the new fixed version and integrate it to OpenMP (The new GTA:SA's multiplayer mod project with the SA:MP as legacy)
+
 # samp-query-ts
 The NPM library that I self-rewrote from Javascript to TypeScript, I want to make the node-samp-query library function stably in Typescript. If there are any bugs/errors/other problems, please report them to me on the Issues tab on this Repository page. Later, I will immediately make a solution/latest version that is good and has no problems, because the original script from this Package Library belongs to someone else that I write again using another programming language
 # Disclaimer Statement
