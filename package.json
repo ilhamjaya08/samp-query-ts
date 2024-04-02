@@ -33,6 +33,12 @@
   "bugs": {
     "url": "https://github.com/ilhamjaya08/samp-query-ts/issues"
   },
+  "files": [
+    "dist/**/*",
+    "REAMDE.md",
+    "LICENSE",
+    "package.json"
+  ],
   "homepage": "https://github.com/ilhamjaya08/samp-query-ts#readme",
   "devDependencies": {
     "@types/node": "^20.12.2",
