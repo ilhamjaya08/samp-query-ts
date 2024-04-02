@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "target": "ESNext",
+        "declaration": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "strictBindCallApply": true,
+        "strictFunctionTypes": true,
+        "strictPropertyInitialization": true,
+        "removeComments": true,
+        "module": "CommonJS",
+        "types": [
+            "@types/node"
+        ],
+        "outDir": "dist",
+        "skipLibCheck": true
+    },
+    "exclude": ["node_modules", "dist", "tests"],
+    "include": ["src/**/*.ts"]
+}

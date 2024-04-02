@@ -1,28 +1,50 @@
 {
-    "name": "samp-query-ts",
-    "version": "0.5.0",
-    "description": "",
-    "main": "index.ts",
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/ilhamjaya08/samp-query-ts.git"
-    },
-    "keywords": [
-      "nodejs",
-      "samp",
-      "query",
-      "samp-query",
-      "promise",
-      "async",
-      "await"
-    ],
-    "author": "ilhamjaya08",
-    "license": "ISC",
-    "bugs": {
-      "url": "https://github.com/ilhamjaya08/samp-query-ts/issues"
-    },
-    "homepage": "https://github.com/ilhamjaya08/samp-query-ts#readme"
+  "name": "samp-query-ts",
+  "version": "1.0.0",
+  "description": "A samp query library for nodejs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "ava"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ilhamjaya08/samp-query-ts.git"
+  },
+  "keywords": [
+    "nodejs",
+    "samp",
+    "query",
+    "samp-query",
+    "promise",
+    "async",
+    "await"
+  ],
+  "author": "ilhamjaya08",
+  "contributors": [
+    {
+      "name": "Hanif Dwy Putra S",
+      "email": "hanifdwyputrasembiring@gmail.com",
+      "url": "https://hansputera.dev"
+    }
+  ],
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ilhamjaya08/samp-query-ts/issues"
+  },
+  "files": [
+    "dist/**/*",
+    "REAMDE.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "homepage": "https://github.com/ilhamjaya08/samp-query-ts#readme",
+  "devDependencies": {
+    "@types/node": "^20.12.2",
+    "ava": "^6.1.2",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
   }
+}
